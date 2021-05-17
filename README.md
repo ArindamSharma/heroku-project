@@ -8,6 +8,12 @@ Steganography is the study and practice of concealing information within objects
 - Randomized LSB II Algorithm
 - Randomized k-LSB Algorithm
 
+## To run locally:
+```
+streamlit run main.py
+```
+
+## Webapp link: [](https://dip-project.herokuapp.com)
 
 ## Group No. 41
 - Firoz Mohammad CED17I017

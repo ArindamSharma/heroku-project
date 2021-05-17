@@ -13,7 +13,7 @@ Steganography is the study and practice of concealing information within objects
 streamlit run main.py
 ```
 
-## Webapp link: [](https://dip-project.herokuapp.com)
+## Webapp link: [https://dip-project.herokuapp.com](https://dip-project.herokuapp.com)
 
 ## Group No. 41
 - Firoz Mohammad CED17I017

@@ -393,10 +393,10 @@ def encode_enc_lsb_rand(img,data,k):
     if(rem!=0):
         datalist+='0'*(3*k-rem)
     lendata = len(datalist)
-
+    c=0
     for i in range(0,lendata,k*3):
         x,y=next(key)
-        #print(x,y)
+        c+=1
         x,y=int(x),int(y)
         kbit_r,kbit_g,kbit_b=datalist[i:i+k],datalist[i+k:i+2*k],datalist[i+2*k:i+3*k] 
         r,g,b=img.getpixel((x,y))[:3]
@@ -408,10 +408,7 @@ def encode_enc_lsb_rand(img,data,k):
 
         img.putpixel((x,y),(r,g,b))
 
-    index=np.where(location==next(key))[0][0]
-    print(location[:index],index)
-    return img,location[:index]
-    return img,location
+    return img,location[:c]
 
 # Encode data into image
 def encode_lsb_rand(filename,image,k,bytes):
@@ -701,7 +698,7 @@ def main():
             loc2=location.copy()
 
             if(d1.button('Decode',key="8")):
-                print(np.array(location))
+                # print(np.array(location))
                 data=decode_lsb_rand(im,k,location)
                 if(data!=None):
                     d1.subheader("Decoded Text")

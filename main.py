@@ -1,12 +1,7 @@
 try:
-
-    from enum import Enum
-    from io import BytesIO, StringIO
-    from typing import Union
+    from io import BytesIO
     from PIL import Image
-    import pandas as pd
     import streamlit as st
-    import cv2
     import numpy as np
     import base64
 
@@ -37,6 +32,7 @@ text-decoration: none;
 """
 
 
+# Some Usefull Function ============================
 
 def mse(imageA, imageB):
 	# the 'Mean Squared Error' between the two images is the sum of the squared difference between the two images;
@@ -47,21 +43,27 @@ def mse(imageA, imageB):
 	# return the MSE, the lower the error, the more "similar" the two images are
 	return err
 
-# Convert encoding data into 8-bit binary form using ASCII value of characters
-def genData(data):
+def get_image_download_link(filename,img):
+	buffered = BytesIO()
+	img.save(buffered, format="PNG")
+	img_str = base64.b64encode(buffered.getvalue()).decode()
+	href = '<a href="data:file/png;base64,'+img_str+'" download='+filename+' style="'+astyle+'" target="_blank">Download Image</a>'
 
-        # list of binary codes of given data
-        # newd = ""
-        # for i in data:
-        #     newd+=(format(ord(i), '08b'))
-        # return newd
-        return [format(ord(i), '08b') for i in data]
+	return href
 
+def get_key_download_link(filename,key):
+    buffered = BytesIO()
+    key.dump(buffered)
+    key_str = base64.b64encode(buffered.getvalue()).decode()
+    href = '<a href="data:file/pkl;base64,'+key_str+'" download='+filename+' style="'+astyle+'" target="_blank">Download Key</a>'
+    return href
+
+# Algo 1 =======================================
 
 # Pixels are modified according to the 8-bit binary data and finally returned
 def modPix(pix, data):
 
-    datalist = genData(data)
+    datalist =[format(ord(i), '08b') for i in data]
     lendata = len(datalist)
     imdata = iter(pix)
 
@@ -92,11 +94,82 @@ def modPix(pix, data):
         yield pix[3:6] #pixel 2
         yield pix[6:9] #pixel 3
 
+def encode_enc(newimg, data):
+    w = newimg.size[0]
+    (x, y) = (0, 0)
+
+    for pixel in modPix(newimg.getdata(), data):
+        # Putting modified pixels in the new image
+        newimg.putpixel((x, y), pixel)
+        if (x == w - 1):
+            x = 0
+            y += 1
+        else:
+            x += 1
+
+# Encode data into image
+def encode(filename,image,bytes):
+
+    global c1,c2
+
+
+    data=c1.text_area("Enter data to be encoded ",max_chars=bytes)
+
+    if(c1.button('Encode',key="1")):
+        if (len(data) == 0):
+            c1.error("Data is empty")
+        else:
+            c2.markdown('#')
+            result = "The given data is encoded in the given cover image"
+            c2.success(result)
+            c2.markdown('####')
+            c2.markdown("#### Encoded Image")
+            c2.markdown('######')
+
+            newimg = image.copy()
+            encode_enc(newimg, data)
+            c2.image(newimg, channels="BGR")
+
+            filename='encoded_'+filename
+
+            image_np = np.array(image)
+            newimg_np = np.array(newimg)
+            MSE=mse(image_np,newimg_np)
+            msg="MSE: "+str(MSE)
+            c2.warning(msg)
+            c2.markdown("#")
+            c2.markdown(get_image_download_link(filename,newimg), unsafe_allow_html=True)
+
+# Decode the data in the image
+def decode(image):
+
+    data = ''
+    imgdata = iter(image.getdata())
+
+    while (True):
+        pixels = [value for value in imgdata.__next__()[:3] + imgdata.__next__()[:3] + imgdata.__next__()[:3]]
+
+        # string of binary data
+        binstr = ''
+
+        for i in pixels[:8]:
+            if (i % 2 == 0):
+                binstr += '0'
+            else:
+                binstr += '1'
+
+        data += chr(int(binstr, 2))
+
+        if (pixels[-1] % 2 != 0):
+            return data
+
+# Algo 2 =======================================
+
 # Pixels are modified according to the 8-bit binary data and finally returned
 def modPix_rand(img,data,location):
 
     key=iter(location)
-    datalist = genData(data)
+    datalist =[format(ord(i), '08b') for i in data]
     lendata = len(datalist)
 
     for i in range(lendata):
@@ -134,19 +207,6 @@ def modPix_rand(img,data,location):
 
     return img
 
-def encode_enc(newimg, data):
-    w = newimg.size[0]
-    (x, y) = (0, 0)
-
-    for pixel in modPix(newimg.getdata(), data):
-        # Putting modified pixels in the new image
-        newimg.putpixel((x, y), pixel)
-        if (x == w - 1):
-            x = 0
-            y += 1
-        else:
-            x += 1
-
 def encode_enc_rand(newimg, data):
 
     w,h = newimg.size
@@ -157,54 +217,7 @@ def encode_enc_rand(newimg, data):
 
     return modPix_rand(newimg,data,loc1),location[:len(data)*3]
 
-def get_image_download_link(filename,img):
-	buffered = BytesIO()
-	img.save(buffered, format="PNG")
-	img_str = base64.b64encode(buffered.getvalue()).decode()
-	href = '<a href="data:file/png;base64,'+img_str+'" download='+filename+' style="'+astyle+'" target="_blank">Download Image</a>'
-
-	return href
-
-def get_key_download_link(filename,key):
-    buffered = BytesIO()
-    key.dump(buffered)
-    key_str = base64.b64encode(buffered.getvalue()).decode()
-    href = '<a href="data:file/pkl;base64,'+key_str+'" download='+filename+' style="'+astyle+'" target="_blank">Download Key</a>'
-    return href
-
 # Encode data into image
-def encode(filename,image,bytes):
-
-    global c1,c2
-
-
-    data=c1.text_area("Enter data to be encoded ",max_chars=bytes)
-
-    if(c1.button('Encode',key="1")):
-        if (len(data) == 0):
-            c1.error("Data is empty")
-        else:
-            c2.markdown('#')
-            result = "The given data is encoded in the given cover image"
-            c2.success(result)
-            c2.markdown('####')
-            c2.markdown("#### Encoded Image")
-            c2.markdown('######')
-
-            newimg = image.copy()
-            encode_enc(newimg, data)
-            c2.image(newimg, channels="BGR")
-
-            filename='encoded_'+filename
-
-            image_np = np.array(image)
-            newimg_np = np.array(newimg)
-            MSE=mse(image_np,newimg_np)
-            msg="MSE: "+str(MSE)
-            c2.warning(msg)
-            c2.markdown("#")
-            c2.markdown(get_image_download_link(filename,newimg), unsafe_allow_html=True)
-
 def encode_rand(filename,img,bytes):
 
     global c1,c2
@@ -238,28 +251,6 @@ def encode_rand(filename,img,bytes):
             c2.markdown(get_image_download_link(filename,newimg)+" "+get_key_download_link(filename1,key), unsafe_allow_html=True)
 
 # Decode the data in the image
-def decode(image):
-
-    data = ''
-    imgdata = iter(image.getdata())
-
-    while (True):
-        pixels = [value for value in imgdata.__next__()[:3] + imgdata.__next__()[:3] + imgdata.__next__()[:3]]
-
-        # string of binary data
-        binstr = ''
-
-        for i in pixels[:8]:
-            if (i % 2 == 0):
-                binstr += '0'
-            else:
-                binstr += '1'
-
-        data += chr(int(binstr, 2))
-
-        if (pixels[-1] % 2 != 0):
-            return data
-
 def decode_rand(img,location):
     key=iter(location)
     data = ''
@@ -290,17 +281,11 @@ def decode_rand(img,location):
         if (pixels[-1] % 2 != 0):
             return data
 
-def genData_lsb(data):
-
-        # list of binary codes of given data
-        newd = ""
-        for i in data:
-             newd+=(format(ord(i), '08b'))
-        return newd
+# Algo 3 =======================================
 
 def encode_enc_lsb(img,data,k):
 
-    datalist = genData_lsb(data) #011 001 10 0, 110 011 0
+    datalist = "".join([format(ord(i), '08b') for i in data])
     rem=len(datalist)%(3*k)
     if(rem!=0):
         datalist+='0'*(3*k-rem)
@@ -309,7 +294,7 @@ def encode_enc_lsb(img,data,k):
     (x, y) = (0, 0)
 
     for i in range(0,lendata,k*3):
-        kbit_r,kbit_g,kbit_b=datalist[i:i+k],datalist[i+k:i+2*k],datalist[i+2*k:i+3*k] #0110
+        kbit_r,kbit_g,kbit_b=datalist[i:i+k],datalist[i+k:i+2*k],datalist[i+2*k:i+3*k] 
         r,g,b=img.getpixel((x,y))[:3]
         # -------------
         # rbg modified = pix
@@ -326,6 +311,7 @@ def encode_enc_lsb(img,data,k):
 
     return img
 
+# Encode data into image
 def encode_lsb(filename,image,k,bytes):
 
     data=d1.text_area("Enter data to be encoded ",max_chars=bytes)
@@ -356,7 +342,8 @@ def encode_lsb(filename,image,k,bytes):
             d2.markdown("#")
             d2.markdown(get_image_download_link(filename,newimg), unsafe_allow_html=True)
 
-def decode_lsb(img,k): #011 001 10 0, 110 011 0
+# Decode the data in the image
+def decode_lsb(img,k): 
     global d1
     w,h=img.size
     x,y=0,0
@@ -392,41 +379,7 @@ def decode_lsb(img,k): #011 001 10 0, 110 011 0
 
     return data
 
-def decode_lsb_rand(img,k,location): #011 001 10 0, 110 011 0
-    global d1
-    # w,h=img.size
-    # x,y=0,0
-    # key=iter(location)
-    rawdata = ''
-    for x,y in location:
-    # while(x,y:=next(key)):
-        # x,y=next(key)
-        x,y=int(x),int(y)
-        r,g,b=img.getpixel((x,y))[:3]
-        rawdata+=format(r, '08b')[-k:]
-        rawdata+=format(g, '08b')[-k:]
-        rawdata+=format(b, '08b')[-k:]
-        # x,y=next(key)
-
-    # print(rawdata)
-    sec_key=""
-    for i in "$dip$":
-        sec_key+=format(ord(i), '08b')
-
-    index=rawdata.find(sec_key) # $dip$ is eomsg
-    if(index==-1):
-        # raise Error
-        d1.error("Decoding Failed")
-        return None
-
-    # print(index)
-    rawdata=rawdata[:index]
-
-    data=''
-    for i in range(0,len(rawdata),8):
-        data+=chr(int(rawdata[i:i+8], 2))
-
-    return data
+# Algo 4 =======================================
 
 def encode_enc_lsb_rand(img,data,k):
     w,h = img.size
@@ -434,7 +387,7 @@ def encode_enc_lsb_rand(img,data,k):
     location = np.array([[(j,i) for i in range(h)] for j in range(w)]).reshape(-1,2)
     np.random.shuffle(location)
     key=iter(location)
-    datalist = genData_lsb(data) #011 001 10 0, 110 011 0
+    datalist = "".join([format(ord(i), '08b') for i in data])
     rem=len(datalist)%(3*k)
     if(rem!=0):
         datalist+='0'*(3*k-rem)
@@ -444,7 +397,7 @@ def encode_enc_lsb_rand(img,data,k):
         x,y=next(key)
         #print(x,y)
         x,y=int(x),int(y)
-        kbit_r,kbit_g,kbit_b=datalist[i:i+k],datalist[i+k:i+2*k],datalist[i+2*k:i+3*k] #0110
+        kbit_r,kbit_g,kbit_b=datalist[i:i+k],datalist[i+k:i+2*k],datalist[i+2*k:i+3*k] 
         r,g,b=img.getpixel((x,y))[:3]
         # -------------
         # rbg modified = pix
@@ -457,6 +410,7 @@ def encode_enc_lsb_rand(img,data,k):
     index=np.where(location==next(key))[0][0]
     return img,location[:index]
 
+# Encode data into image
 def encode_lsb_rand(filename,image,k,bytes):
 
     data=d1.text_area("Enter data to be encoded ",max_chars=bytes)
@@ -487,9 +441,35 @@ def encode_lsb_rand(filename,image,k,bytes):
             filename1 = 'key.pkl'
             d2.markdown(get_image_download_link(filename,newimg)+" "+get_key_download_link(filename1,key), unsafe_allow_html=True)
 
+# Decode the data in the image
+def decode_lsb_rand(img,k,location): 
+    global d1
+    rawdata = ''
+    for x,y in location:
+        x,y=int(x),int(y)
+        r,g,b=img.getpixel((x,y))[:3]
+        rawdata+=format(r, '08b')[-k:]
+        rawdata+=format(g, '08b')[-k:]
+        rawdata+=format(b, '08b')[-k:]
+
+    sec_key=""
+    for i in "$dip$":
+        sec_key+=format(ord(i), '08b')
+
+    index=rawdata.find(sec_key) # $dip$ is eomsg
+    if(index==-1):
+        d1.error("Decoding Failed")
+        return None
+
+    rawdata=rawdata[:index]
+    data=''
+    for i in range(0,len(rawdata),8):
+        data+=chr(int(rawdata[i:i+8], 2))
+
+    return data
 
 
-def run():
+def main():
 
     global c1,c2,d1,d2
 
@@ -729,8 +709,5 @@ def run():
 
             file.close()
 
-
-
-
-
-run()
+if __name__=="__main__":
+    main()

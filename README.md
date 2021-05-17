@@ -1,4 +1,6 @@
 # Digital Image Processing
+![DIP Image Steganography](https://img.shields.io/badge/DIP-Image%20Steganography-brightgreen)
+![Heroku](https://img.shields.io/badge/Heroku-Git-red)
 ## Image Steanography  
 Steganography is the study and practice of concealing information within objects in such a way that it deceives the viewer as if there is no information hidden within the object. It is hiding information in plain sight, such that only the intended recipient would get to see it.
 
@@ -10,7 +12,7 @@ Steganography is the study and practice of concealing information within objects
 
 ## To run locally:
 ```
-$streamlit run main.py
+$ streamlit run main.py
 ```
 
 Webapp link: [https://dip-project.herokuapp.com](https://dip-project.herokuapp.com)

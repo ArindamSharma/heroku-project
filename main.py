@@ -294,7 +294,7 @@ def encode_enc_lsb(img,data,k):
     (x, y) = (0, 0)
 
     for i in range(0,lendata,k*3):
-        kbit_r,kbit_g,kbit_b=datalist[i:i+k],datalist[i+k:i+2*k],datalist[i+2*k:i+3*k] 
+        kbit_r,kbit_g,kbit_b=datalist[i:i+k],datalist[i+k:i+2*k],datalist[i+2*k:i+3*k]
         r,g,b=img.getpixel((x,y))[:3]
         # -------------
         # rbg modified = pix
@@ -343,7 +343,7 @@ def encode_lsb(filename,image,k,bytes):
             d2.markdown(get_image_download_link(filename,newimg), unsafe_allow_html=True)
 
 # Decode the data in the image
-def decode_lsb(img,k): 
+def decode_lsb(img,k):
     global d1
     w,h=img.size
     x,y=0,0
@@ -398,7 +398,7 @@ def encode_enc_lsb_rand(img,data,k):
         x,y=next(key)
         c+=1
         x,y=int(x),int(y)
-        kbit_r,kbit_g,kbit_b=datalist[i:i+k],datalist[i+k:i+2*k],datalist[i+2*k:i+3*k] 
+        kbit_r,kbit_g,kbit_b=datalist[i:i+k],datalist[i+k:i+2*k],datalist[i+2*k:i+3*k]
         r,g,b=img.getpixel((x,y))[:3]
         # -------------
         # rbg modified = pix
@@ -442,7 +442,7 @@ def encode_lsb_rand(filename,image,k,bytes):
             d2.markdown(get_image_download_link(filename,newimg)+" "+get_key_download_link(filename1,key), unsafe_allow_html=True)
 
 # Decode the data in the image
-def decode_lsb_rand(img,k,location): 
+def decode_lsb_rand(img,k,location):
     global d1
     rawdata = ''
     for x,y in location:
@@ -493,7 +493,7 @@ def main():
     """
     st.sidebar.markdown(info, unsafe_allow_html=True)
     st.sidebar.subheader("Choose Algorithm: ")
-    algo = st.sidebar.radio("",["Algorithm 1","k-LSB Algorithm","Randomized Algorithm 1","Randomized k-LSB Algorithm"])
+    algo = st.sidebar.radio("",["LSB II Algorithm","k-LSB Algorithm","Randomized LSB II Algorithm","Randomized k-LSB Algorithm"])
 
     info ="""
     ## Group No. 41
@@ -508,9 +508,9 @@ def main():
     st.markdown(STYLE, unsafe_allow_html=True)
 
 
-    if(algo=="Algorithm 1"):
-        st.subheader("Algorithm 1")
-        st.write("3 pixels (3*3 channels = 9 values) are used to encode one ASCII character. LSBs of first 8 values encode the ASCII in binary format and the LSB of the 9th value is used to represent whether it is end of message.")
+    if(algo=="LSB II Algorithm"):
+        st.subheader("LSB II Algorithm")
+        st.write("3 pixels (3*3 channels = 9 values) are used to encode one ASCII character. LSBs of first 8 values encode the ASCII in binary format and the LSB of the 9th value is used to represent whether it is end of message. Data is stored serially from first pixel onwards.")
         choice = st.radio('Choose',["Encode","Decode"])
         if(choice=="Encode"):
             c1, c2 = st.beta_columns(2)
@@ -556,10 +556,10 @@ def main():
 
     elif(algo=="k-LSB Algorithm"):
         st.subheader("k-LSB Algorithm")
-
+        st.write("k LSB bits of each pixel channel is used to encode the data in binary format. '\$dip\$' is appended to the data to denote the end of it. Data is stored serially from first pixel onwards.")
         d1, d2 = st.beta_columns(2)
         choice = d1.radio('Choose',["Encode","Decode"])
-        k = d2.slider("K bit encoding", min_value=1, max_value=8)
+        k = d2.slider("Choose value of k", min_value=1, max_value=8)
 
         if(choice=="Encode"):
             file = d1.file_uploader("Upload Cover Image", type=fileTypes, key="fu3")
@@ -603,9 +603,9 @@ def main():
 
             file.close()
 
-    elif(algo=="Randomized Algorithm 1"):
-        st.subheader("Randomized Algorithm 1")
-        st.write("3 pixels (3*3 channels = 9 values) are used to encode one ASCII character. LSBs of first 8 values encode the ASCII in binary format and the LSB of the 9th value is used to represent whether it is end of message.")
+    elif(algo=="Randomized LSB II Algorithm"):
+        st.subheader("Randomized LSB II Algorithm")
+        st.write("3 pixels (3*3 channels = 9 values) are used to encode one ASCII character. LSBs of first 8 values encode the ASCII in binary format and the LSB of the 9th value is used to represent whether it is end of message.  Data is stored randomly according to the key.")
         choice = st.radio('Choose',["Encode","Decode"])
         if(choice=="Encode"):
             c1, c2 = st.beta_columns(2)
@@ -657,10 +657,10 @@ def main():
 
     elif(algo=="Randomized k-LSB Algorithm"):
         st.subheader("Randomized k-LSB Algorithm")
-
+        st.write("k LSB bits of each pixel channel is used to encode the data in binary format. '\$dip\$' is appended to the data to denote the end of it. Data is stored randomly according to the key.")
         d1, d2 = st.beta_columns(2)
         choice = d1.radio('Choose',["Encode","Decode"])
-        k = d2.slider("K bit encoding", min_value=1, max_value=8)
+        k = d2.slider("Choose value of k", min_value=1, max_value=8)
 
         if(choice=="Encode"):
             file = d1.file_uploader("Upload Cover Image", type=fileTypes, key="fu3")

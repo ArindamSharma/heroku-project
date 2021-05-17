@@ -388,6 +388,7 @@ def encode_enc_lsb_rand(img,data,k):
     np.random.shuffle(location)
     key=iter(location)
     datalist = "".join([format(ord(i), '08b') for i in data])
+    # print(datalist)
     rem=len(datalist)%(3*k)
     if(rem!=0):
         datalist+='0'*(3*k-rem)
@@ -408,7 +409,9 @@ def encode_enc_lsb_rand(img,data,k):
         img.putpixel((x,y),(r,g,b))
 
     index=np.where(location==next(key))[0][0]
+    print(location[:index],index)
     return img,location[:index]
+    return img,location
 
 # Encode data into image
 def encode_lsb_rand(filename,image,k,bytes):
@@ -457,10 +460,10 @@ def decode_lsb_rand(img,k,location):
         sec_key+=format(ord(i), '08b')
 
     index=rawdata.find(sec_key) # $dip$ is eomsg
+    # print(rawdata,sec_key)
     if(index==-1):
         d1.error("Decoding Failed")
         return None
-
     rawdata=rawdata[:index]
     data=''
     for i in range(0,len(rawdata),8):
@@ -684,8 +687,8 @@ def main():
             file.close()
 
         elif(choice=="Decode"):
-            file = d1.file_uploader("Upload Encoded Image", type=fileTypes, key="fu4")
-            keyfile = d2.file_uploader("Upload Key", type=fileTypes1, key="fukey")
+            file = d1.file_uploader("Upload Encoded Image", type=fileTypes, key="fu41")
+            keyfile = d2.file_uploader("Upload Key", type=fileTypes1, key="fukey1")
             show_file = d1.empty()
             if not file:
                 show_file.info("Please upload a file of type: " + ", ".join(["png","jpg"]))
@@ -698,6 +701,7 @@ def main():
             loc2=location.copy()
 
             if(d1.button('Decode',key="8")):
+                print(np.array(location))
                 data=decode_lsb_rand(im,k,location)
                 if(data!=None):
                     d1.subheader("Decoded Text")
